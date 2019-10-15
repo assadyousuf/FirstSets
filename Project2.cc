@@ -24,8 +24,10 @@ vector <string> symbol; //symbol used to store
  LexicalAnalyzer lexer;
  vector <int> nonterminals;
  vector <int> terminals;
- vector <bool> generatingSymbols;
+ vector <bool> generating;
  vector <bool> reachable;
+vector <grammerRule*> generatingRules;
+vector <grammerRule*> reachableRules;
  vector <int> usefullSymbols;
 
 
@@ -64,57 +66,48 @@ bool searchSet(vector <bool> vect, int arg){
 
 void reachableCalc(){
     bool change;
-    
-    reachable.resize(generatingSymbols.size());
-    //reachable[0]=true;
-  
-    
-    for(int w=0;w<generatingSymbols.size();w++){
-        reachable[w]=false;
-        
-    }
-    
-    reachable[0]=true;
+    reachable.resize(symbol.size());
+    reachable[0]=true; //adding start symbol to reachable set
     change=true;
+    
     while(change){
-    for(int j=0; j<rules.size(); j++){
-        if(rules[j]->isGen){
-            if(searchSet(reachable,rules[j]->LHS) ){
-                for(int d=0; d<rules[j]->RHS.size(); d++){
-                    if(searchSet(reachable,rules[j]->RHS[d]) ==false){
-                        reachable[rules[j]->RHS[d]]=true;
+        change=false;
+        for(int k=0; k<generatingRules.size(); k++){
+            if(searchSet(reachable, generatingRules[k]->LHS)){
+                for(int x=0;x<generatingRules[k]->RHS.size();x++){
+                    if(searchSet(reachable, generatingRules[k]->RHS[x]) == false ){
+                        reachable[generatingRules[k]->RHS[x]]=true;
                         change=true;
+                
                     }
-                    
                 }
                 
             }
             
+        }
+        
+    }
+        
+        for(int t=0; t<generatingRules.size(); t++){
+            if(reachable[generatingRules[t]->LHS] == true){
+                cout<<symbol[generatingRules[t]->LHS] << "->";
+                for(int m=0; m<generatingRules[t]->RHS.size(); m++){
+                    if(symbol[generatingRules[t]->RHS[m]] == ""){
+                        cout<< "#" << " ";
+                    }
+                            cout << symbol[generatingRules[t]->RHS[m]] << " ";
+                        }
+                            cout<< "\n";
+            }
             
         }
         
         
-    }
-    }
+        
+    
+
     
     
-  
-    
-    
-    
-    
-    
-    
-    
-    
-    for(int u=0; u<rules.size(); u++){
-        if(rules[u]->LHS == reachable[u]){
-            cout << rules[u]->LHS << "-> ";
-            for(int y=0; y<rules[u]->RHS.size(); y++){
-                cout << rules[u]->RHS[y];
-            }
-        }
-    }
     
     
     
@@ -122,49 +115,71 @@ void reachableCalc(){
 
 
 void generatingSet(){
- 
-    generatingSymbols.resize(symbol.size());
- //add epsilon and all terminals to generating set
-    //generatingSymbols.resize(symbol.size());
-    for(int i=0; i<terminals.size(); i++){
-        generatingSymbols[terminals[i]]=true;
+    vector <string> falseq;
+    
+    bool change;
+    change=true;
+    
+    generating.resize(symbol.size());
+    for(int s=0; s<terminals.size(); s++){
+        generating[terminals[s]]=true;
     }
     
-    bool change=true;
-    bool gen=false;
-    int loops=0;
+    falseq.resize(generating.size());
+    
+    
     
     while(change){
-        loops++;
         change=false;
-        for(int j=0; j<rules.size(); j++){
-            for(int v=0; v<rules[j]->RHS.size(); v++){
-                if( searchSet(generatingSymbols, rules[j]->RHS[v]) ){
-                    gen=true;
-                } else{
-                    gen=false;
-                }
-                
-            }
-            if(gen==true && generatingSymbols[rules[j]->LHS]==false){
-                generatingSymbols[rules[j]->LHS]=true;
-                change=true;
-            }
-        }
-    }
-    
-    //remove rules with nongenerating symbols
-    for(int r=0; r<rules.size(); r++){
-        for(int l=0; l<rules[r]->RHS.size(); l++){
-            if(searchSet(generatingSymbols,rules[r]->RHS[l]) == false ){
-                rules[r]->isGen=false;
-            }
-            else {
-                rules[r]->isGen=true;
-            }
+    for(int i=0; i<rules.size(); i++){
+        
+        int j=0;
+        while(j<rules[i]->RHS.size() && searchSet(generating, rules[i]->RHS[j]) ){
+            j++;
         }
         
+        //cout << "1\n";
+        if(j==rules[i]->RHS.size() && searchSet(generating, rules[i]->LHS) ==false){
+            //cout << "2\n";
+            generating[rules[i]->LHS]=true;
+            change=true;
+        }
     }
+        
+    }
+    
+    
+    for(int z=0; z<terminals.size(); z++){
+        if(generating[z]==false){
+            falseq.insert(falseq.begin()+0,symbol[z]);
+        }
+     
+    }
+    
+    
+    bool gen=true;
+    //grammer gen
+   // for(int i=0; i<generating.size(); i++){
+        //if(generating[i]==true){
+            for(int q=0; q<rules.size(); q++ ){
+                if(generating[rules[q]->LHS]==true){
+                    for(int f=0; f<rules[q]->RHS.size(); f++){
+                        if(symbol[rules[q]->RHS[f]] == falseq[f]  && symbol[rules[q]->RHS[f]]!=""){
+                            gen=false;
+                        }
+                        
+                    }
+                    if(gen!=false && generatingRules.size()<= rules.size()){
+                    generatingRules.push_back(rules[q]);}
+                    gen=true;
+                }
+            } //loop through ruleset and check if the lHS of each rule matches the generating symbols
+            
+       // }
+        
+    //}
+    
+    reachableCalc();
     
 }
 
@@ -233,7 +248,7 @@ void printTerminalsAndNoneTerminals()
     
    //printing terminals anything thats not a nonterminal is a terminal
     for(int j=0; j<symbol.size(); j++){
-        if(find(nonterminals.begin(),nonterminals.end(),j) == nonterminals.end() && symbol[j]!=""){
+        if(find(nonterminals.begin(),nonterminals.end(),j) == nonterminals.end() && symbol[j]!="END_OF_FILE"){
             cout << symbol[j] << " ";
             terminals.push_back(j);
         }
@@ -260,20 +275,21 @@ void setTerminals(){
 // Task 2
 void RemoveUselessSymbols()
 {
-    
-    cout << "2\n";
+    setTerminals();
+    generatingSet();
+    //cout << "2\n";
 }
 
 // Task 3
 void CalculateFirstSets()
 {
-    cout << "3\n";
+    //cout << "3\n";
 }
 
 // Task 4
 void CalculateFollowSets()
 {
-    cout << "4\n";
+   // cout << "4\n";
 }
 
 // Task 5
@@ -282,24 +298,24 @@ void CheckIfGrammarHasPredictiveParser()
     cout << "5\n";
 }
     
-int main ()
+int main (int argc, char* argv[])
 {
-    //int task;
+    int task;
    
     
     
-    /*if (argc < 2)
+   if (argc < 2)
     {
         cout << "Error: missing argument\n";
         return 1;
-    }*/
+    }
 
     /*
        Note that by convention argv[0] is the name of your executable,
        and the first argument to your program is stored in argv[1]
      */
 
-    //task = atoi(argv[1]);
+    task = atoi(argv[1]);
 
     
     ReadGrammar();  // Reads the input grammar from standard input
@@ -307,18 +323,11 @@ int main ()
                     // ad described in project 2 presentation file
     
     
-    //printTerminalsAndNoneTerminals();
-    setTerminals();
-    generatingSet();
-    reachableCalc();
     
-    for(int i=0; i<reachable.size(); i++){
-        if(reachable[i]==true){
-            cout<<symbol[reachable[i]];
-        }
-    }
     
-    /*switch (task) {
+    
+    
+    switch (task) {
         case 1: printTerminalsAndNoneTerminals();
             break;
 
@@ -337,7 +346,7 @@ int main ()
         default:
             cout << "Error: unrecognized task number " << task << "\n";
             break;
-    }*/
+    }
     
     return 0;
 }
