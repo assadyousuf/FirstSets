@@ -29,7 +29,7 @@ vector <string> symbol; //symbol used to store
 vector <grammerRule*> generatingRules;
 vector <grammerRule*> reachableRules;
  vector <int> usefullSymbols;
-vector <vector<string>> firstSets;
+vector < vector<string> > firstSets;
 
 
 bool checkIfInVector(vector <string> *vect, Token *t){
@@ -303,69 +303,61 @@ void CalculateFirstSets()
     while(change){
         change=false;
         for(int q=0; q<rules.size();q++){
-            //rule 3
-            /*if( find(nonterminals.begin(),nonterminals.end(),rules[q]->RHS[0]) != nonterminals.end() || find(terminals.begin(),terminals.end(),rules[q]->RHS[0]) != nonterminals.end()){
-                firstSets[rules[q]->LHS]=firstSets[rules[q]->RHS[0]];
-                //search for epsilon
-                
-               vector<string>::iterator it= find(firstSets[rules[q]->LHS].begin(),firstSets[rules[q]->LHS].end(),"#");
-                if(it!=firstSets[rules[q]->LHS].end()){ // if an epsilon is found at a specific index then erase it
-                    firstSets[rules[q]->LHS].erase(firstSets[rules[q]->LHS].end());
-                }
-                
-          }
-            vector<int>::iterator it1=rules[q]->RHS.begin();
-            while(it1!=rules[q]->RHS.end()){
-                if(find(firstSets[*it1].begin(),firstSets[*it1].end(),"#" ) != firstSets[*it1].end()){
-                    it1++;
-                }else {
-                    break;
-                }
-            }
-            
-            if(it1!=rules[q]->RHS.end()){
-                firstSets[rules[q]->LHS]=firstSets[*it1];
-                
-            }
-            
-            if(it1==rules[q]->RHS.end()){
-                firstSets[rules[q]->LHS].push_back("#");
-                
-            }
-             
-            
-        }
-        
-        
-    }*/
-    
-    //cout << "3\n";
             
             //vector<grammerRule*>::iterator it=rules.begin();
             vector <int>::iterator it1=rules[q]->RHS.begin();
-            vector <int>::iterator previous;
-            while(find(firstSets[*it1].begin(),firstSets[*it1].end(),"#") != firstSets[*it1].end() ){
+            vector <int>::iterator previous=rules[q]->RHS.begin();
+            while(find(firstSets[*it1].begin(),firstSets[*it1].end(),"#") != firstSets[*it1].end()  && it1!=rules[q]->RHS.end()){
                 previous=it1;
                 it1++;
             }
-            if(it1!=rules[q]->RHS.end() &&  firstSets[rules[q]->LHS]!=firstSets[*it1]){
-                for(int z=0;z<firstSets[*it1].size();z++){
-                    if(firstSets[*it1].at(z)!="#"){
-                        firstSets[rules[q]->LHS].push_back(firstSets[*it1].at(z));}
-                }
-                change=true;
-            }
+            cout<<"1\n";
             
-            auto p=find(firstSets[rules[q]->LHS].begin(),firstSets[rules[q]->LHS].end(),firstSets[*previous]);
-            //p=find(firstSets[rules[q]->LHS].begin(),firstSets[rules[q]->LHS].end(),firstSets[*previous]);
-            if(it1==rules[q]->RHS.end() && p == firstSets[rules[q]->LHS].end() ){
-                for(int z1=0; z1<firstSets[*it1].size();z1++){
-                    firstSets[rules[q]->LHS].push_back(firstSets[*previous].at(z1));}
+            
+            //if all letters are epsilon
+            if(it1==rules[q]->RHS.end() && find(firstSets[rules[q]->LHS].begin(),firstSets[rules[q]->LHS].end(),"#") == firstSets[rules[q]->LHS].end() ){
+                //firstSets[rules[q]->LHS].insert( firstSets[rules[q]->LHS].begin(),"#");
+                firstSets[rules[q]->LHS].push_back("#");
                 change=true;
             }
+             cout<<"2\n";
+            
+            if(it1!=rules[q]->RHS.end()){
+                for(int i=0;i<firstSets[*previous].size(); i++){
+                    if(find(firstSets[rules[q]->LHS].begin(),firstSets[rules[q]->LHS].end(),firstSets[*previous][i])==firstSets[rules[q]->LHS].end()){
+                        //firstSets[rules[q]->LHS].insert( firstSets[rules[q]->LHS].begin(),firstSets[*previous][i]);
+                        firstSets[rules[q]->LHS].push_back(firstSets[*previous][i]);
+                        change=true;
+                        
+                    }
+                    
+                }
+            }
+             cout<<"3\n";
+            
 }
     }
+    
+    sort(nonterminals.begin(), nonterminals.end());
+    
+    for(int m=0; m<nonterminals.size();m++){
+        cout<<"FIRST("<<symbol[nonterminals[m]] << ") = { ";
+        for(int n=0; n<firstSets[nonterminals[m]].size(); n++){
+            if(n==0 && firstSets[nonterminals[m]].size()==1){
+                sort(firstSets[nonterminals[m]].begin(),firstSets[nonterminals[m]].end());
+                cout << firstSets[nonterminals[m]][n];
+            }
+            else if(n+1>=firstSets[nonterminals[m]].size()){
+                    cout << firstSets[nonterminals[m]][n];
+            }else {
+            cout << firstSets[nonterminals[m]][n]<< ", ";}
+                
+                
+        }
+        cout << " }\n";
+                                 }
 }
+
 
 // Task 4
 void CalculateFollowSets()
