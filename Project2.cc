@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <vector>
 #include <map>
+#include <set>
 using namespace std;
 struct grammerRule{
     int LHS;
@@ -29,7 +30,7 @@ vector <string> symbol; //symbol used to store
 vector <grammerRule*> generatingRules;
 vector <grammerRule*> reachableRules;
  vector <int> usefullSymbols;
-vector <string> firstSets;
+ vector <string> firstSets;
 bool change;
 
 
@@ -394,7 +395,35 @@ void fRule5(bool *change, bool firstTime,grammerRule* t){
       
 }
 
+void applyRules(grammerRule* b, int index,bool* something){
+    int z=b->RHS[index];
+    int lhs=b->LHS;
+    if(/*b->RHS[index]==b->RHS.back()*/ index==b->RHS.size() && (firstSets[lhs].find("#") == string::npos)){ //base case if last element is Epsilon and epsilon does not exist in first(LHS)
+        firstSets[b->LHS].append("#");
+        *something=true;
+    }
+      
+    else if(/*b->RHS[index]!=b->RHS.back()*/ index!=b->RHS.size()){ //if symbol is not the last element
+        int y=b->RHS[index];
+        string tem=firstSets[y]; //tem=firstSet of that symbol we are processing
+        
+            string LHSet= firstSets[b->LHS];
+            string RHSet=firstSets[b->RHS[index]];
+            if(LHSet.find(RHSet) == string::npos || LHSet==""){
+            firstSets[b->LHS].append(firstSets[b->RHS[index]]);
+                *something=true;
+            return;
+            }
+        
+        if(tem.find("#")!=string::npos){ //if firstset of symbol that we are processing has epsilon
+            applyRules(b, index+1, something);
+        }
+        
+        
+    }
+             
     
+}
     
     
     
@@ -415,9 +444,7 @@ void CalculateFirstSets()
     setTerminals();
     firstSets.resize(symbol.size());
     
-       for(int f=0;f<firstSets.size();f++){
-           firstSets[f]=to_string(rand());
-       }
+       
     //loop thorugh symbols and see which ones are terminals and add them to firstSet of each terminal
     for(int u=0; u<terminals.size(); u++){
         for(int v=0; v<symbol.size(); v++){
@@ -433,15 +460,21 @@ void CalculateFirstSets()
  
     
     bool c=true;
-    bool firstTime=true;
+  
     while(c){
         c=false;
         for(grammerRule* b:rules){
-        fRule3(&c,firstTime,b);
-        fRule4(&c,firstTime,b);
-        fRule5(&c,firstTime,b);
-        firstTime=false;
+            //vector <string> temp=firstSets;
+            applyRules(b,0,&c);
+            
         }
+        
+    }
+    
+    for(int h=0;h<firstSets.size();h++){
+        string s=firstSets[h];
+        auto plz=std::unique(s.begin(), s.end());
+        firstSets[h]=plz-s.begin();
         
     }
     
