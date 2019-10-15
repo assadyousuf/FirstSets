@@ -29,6 +29,7 @@ vector <string> symbol; //symbol used to store
 vector <grammerRule*> generatingRules;
 vector <grammerRule*> reachableRules;
  vector <int> usefullSymbols;
+vector <vector<string>> firstSets;
 
 
 bool checkIfInVector(vector <string> *vect, Token *t){
@@ -283,7 +284,87 @@ void RemoveUselessSymbols()
 // Task 3
 void CalculateFirstSets()
 {
+    bool change;
+    setTerminals();
+    firstSets.resize(symbol.size());
+    //loop thorugh symbols and see which ones are terminals and add them to firstSet of each terminal
+    for(int u=0; u<terminals.size(); u++){
+        for(int v=0; v<symbol.size(); v++){
+            if(v==terminals[u]){
+                if(symbol[terminals[u]]==""){
+                    firstSets[v].insert(firstSets[v].begin(),"#");
+                } else {
+                    firstSets[v].insert(firstSets[v].begin(),symbol[terminals[u]]);} //insert the symbol of the index given inside of terminal to first set of that index
+            }
+        }
+    }
+    
+    change=true;
+    while(change){
+        change=false;
+        for(int q=0; q<rules.size();q++){
+            //rule 3
+            /*if( find(nonterminals.begin(),nonterminals.end(),rules[q]->RHS[0]) != nonterminals.end() || find(terminals.begin(),terminals.end(),rules[q]->RHS[0]) != nonterminals.end()){
+                firstSets[rules[q]->LHS]=firstSets[rules[q]->RHS[0]];
+                //search for epsilon
+                
+               vector<string>::iterator it= find(firstSets[rules[q]->LHS].begin(),firstSets[rules[q]->LHS].end(),"#");
+                if(it!=firstSets[rules[q]->LHS].end()){ // if an epsilon is found at a specific index then erase it
+                    firstSets[rules[q]->LHS].erase(firstSets[rules[q]->LHS].end());
+                }
+                
+          }
+            vector<int>::iterator it1=rules[q]->RHS.begin();
+            while(it1!=rules[q]->RHS.end()){
+                if(find(firstSets[*it1].begin(),firstSets[*it1].end(),"#" ) != firstSets[*it1].end()){
+                    it1++;
+                }else {
+                    break;
+                }
+            }
+            
+            if(it1!=rules[q]->RHS.end()){
+                firstSets[rules[q]->LHS]=firstSets[*it1];
+                
+            }
+            
+            if(it1==rules[q]->RHS.end()){
+                firstSets[rules[q]->LHS].push_back("#");
+                
+            }
+             
+            
+        }
+        
+        
+    }*/
+    
     //cout << "3\n";
+            
+            //vector<grammerRule*>::iterator it=rules.begin();
+            vector <int>::iterator it1=rules[q]->RHS.begin();
+            vector <int>::iterator previous;
+            while(find(firstSets[*it1].begin(),firstSets[*it1].end(),"#") != firstSets[*it1].end() ){
+                previous=it1;
+                it1++;
+            }
+            if(it1!=rules[q]->RHS.end() &&  firstSets[rules[q]->LHS]!=firstSets[*it1]){
+                for(int z=0;z<firstSets[*it1].size();z++){
+                    if(firstSets[*it1].at(z)!="#"){
+                        firstSets[rules[q]->LHS].push_back(firstSets[*it1].at(z));}
+                }
+                change=true;
+            }
+            
+            auto p=find(firstSets[rules[q]->LHS].begin(),firstSets[rules[q]->LHS].end(),firstSets[*previous]);
+            //p=find(firstSets[rules[q]->LHS].begin(),firstSets[rules[q]->LHS].end(),firstSets[*previous]);
+            if(it1==rules[q]->RHS.end() && p == firstSets[rules[q]->LHS].end() ){
+                for(int z1=0; z1<firstSets[*it1].size();z1++){
+                    firstSets[rules[q]->LHS].push_back(firstSets[*previous].at(z1));}
+                change=true;
+            }
+}
+    }
 }
 
 // Task 4
