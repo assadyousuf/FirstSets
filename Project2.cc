@@ -302,38 +302,23 @@ void CalculateFirstSets()
     change=true;
     while(change){
         change=false;
-        for(int q=0; q<rules.size();q++){
-            
-            //vector<grammerRule*>::iterator it=rules.begin();
-            vector <int>::iterator it1=rules[q]->RHS.begin();
-            vector <int>::iterator previous=rules[q]->RHS.begin();
-            while(find(firstSets[*it1].begin(),firstSets[*it1].end(),"#") != firstSets[*it1].end()  && it1!=rules[q]->RHS.end()){
-                previous=it1;
-                it1++;
-            }
-            cout<<"1\n";
-            
-            
-            //if all letters are epsilon
-            if(it1==rules[q]->RHS.end() && find(firstSets[rules[q]->LHS].begin(),firstSets[rules[q]->LHS].end(),"#") == firstSets[rules[q]->LHS].end() ){
-                //firstSets[rules[q]->LHS].insert( firstSets[rules[q]->LHS].begin(),"#");
-                firstSets[rules[q]->LHS].push_back("#");
-                change=true;
-            }
-             cout<<"2\n";
-            
-            if(it1!=rules[q]->RHS.end()){
-                for(int i=0;i<firstSets[*previous].size(); i++){
-                    if(find(firstSets[rules[q]->LHS].begin(),firstSets[rules[q]->LHS].end(),firstSets[*previous][i])==firstSets[rules[q]->LHS].end()){
-                        //firstSets[rules[q]->LHS].insert( firstSets[rules[q]->LHS].begin(),firstSets[*previous][i]);
-                        firstSets[rules[q]->LHS].push_back(firstSets[*previous][i]);
-                        change=true;
-                        
+        for(grammerRule *rule:rules){
+            for(int i:rule->RHS){
+                if( find(firstSets[i].begin(),firstSets[i].end(),"#") !=  firstSets[i].end() ){
+                    for(string s:firstSets[i]){
+                        if(s=="#" && i+1>=rule->RHS.size() && find(firstSets[rule->LHS].begin(),firstSets[rule->LHS].end(),"#") == firstSets[rule->LHS].end()){
+                            firstSets[rule->LHS].push_back("#");
+                            change=true;
+                        }
                     }
-                    
+                }else{
+                    for(string s:firstSets[i]){
+                        if(find(firstSets[rule->LHS].begin(),firstSets[rule->LHS].end(),s) == firstSets[rule->LHS].end()){
+                            firstSets[rule->LHS].push_back(s); change=true;}}
+                    break;
                 }
+            
             }
-             cout<<"3\n";
             
 }
     }
