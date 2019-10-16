@@ -19,7 +19,11 @@ struct grammerRule{
     vector <int> RHS;
     bool isGen=false;
     bool isReachable=false;
+    bool isTerminal=false;
+    bool isFirstEpsilon=false;
 };
+
+
 using namespace std;
 
 vector <grammerRule*> rules;
@@ -33,7 +37,8 @@ vector <grammerRule*> generatingRules;
 vector <grammerRule*> reachableRules;
  vector <int> usefullSymbols;
   map<int,vector<string>> firstSets;
-bool change;
+  bool change;
+int countOfSpecialSymbols=0;
 
 
 
@@ -194,13 +199,17 @@ void ReadGrammar()
 {
     Token t=lexer.GetToken();
     lexer.UngetToken(t);
+    //bool isFirstEpsilon=false;
+     symbol.insert(symbol.begin(), "#");
     while(t.token_type!=END_OF_FILE){
+        
+       
     t=lexer.GetToken();
     if(t.token_type==ID){
        //vector<string>::iterator it=find(symbol.begin(),symbol.end(),t.lexeme);
         grammerRule *rule=new grammerRule();
        
-        if(checkIfInVector(&symbol, &t) == false){
+        if(checkIfInVector(&symbol, &t) == false){ //checks if rhs is in symbol table otherwise adds it
         symbol.push_back(t.lexeme);
         }
         
@@ -212,11 +221,12 @@ void ReadGrammar()
         t=lexer.GetToken();
         if(t.token_type==ARROW){
             t=lexer.GetToken();
-            if(checkIfInVector(&symbol, &t) == false){
+            if(checkIfInVector(&symbol, &t) == false && t.lexeme!=""){
                 symbol.push_back(t.lexeme);
             }
             if(t.token_type==HASH){
-                rule->RHS.push_back(findIndexInVector(&symbol, &t));
+                rule->isFirstEpsilon=true;
+                rule->RHS.push_back(0);
             }
             while(t.token_type!=HASH){
                 if(checkIfInVector(&symbol, &t) == false){
@@ -226,11 +236,12 @@ void ReadGrammar()
                 rule->RHS.push_back(findIndexInVector(&symbol, &t));
                 t=lexer.GetToken();
             }
-           
-            rules.push_back(rule);
+            
+          
+                rules.push_back(rule);
         }
     } if(t.token_type==DOUBLEHASH){
-        symbol.push_back("END_OF_FILE");
+        //symbol.push_back("END_OF_FILE");
         return;
     }
     
@@ -265,56 +276,22 @@ void printTerminalsAndNoneTerminals()
 void setTerminals(){
     
     for(int j=0; j<symbol.size(); j++){
-           if(find(nonterminals.begin(),nonterminals.end(),j) == nonterminals.end() && symbol[j]!="END_OF_FILE"){
+           if(find(nonterminals.begin(),nonterminals.end(),j) == nonterminals.end() &&  symbol[j]!="#"){
                //cout << symbol[j] << " ";
-               terminals.push_back(j);
+            terminals.push_back(j);
            }
     }
     
 }
 
-
-
-void applyRules(grammerRule* b, int index,bool* something){
- 
-   
-    int z=b->RHS[index];
-    int LHS=b->LHS;
-    
-    if(z>b->RHS.size()){
-        firstSets[LHS].push_back("#");
-        return;
-    }
-    else if(index>=b->RHS.size() && find(firstSets[LHS].begin(),firstSets[LHS].end(), "#") == firstSets[LHS].end() ){ //when inndex is end and # aka -1 is not inside vector
-        if(find(firstSets[b->RHS[z-1]].begin(),firstSets[b->RHS[z-1]].end(), "#") != firstSets[b->RHS[z-1]].end()){
-        firstSets[LHS].push_back("#");
-            *something=true;
-            return;
+vector <string> containEpsilon(vector <string> set){
+    for(int bf=0;bf<set.size();bf++){
+        if(set[bf]=="#"){
+            set.erase(set.begin()+bf);
+            return set;
         }
-        
-        
-    }else if(index>=b->RHS.size()){
-        return;
     }
-    
-      //add first of symbol to LHS
-      //copy contents of RHS vector to LHS vector
-    for(string i:firstSets[z]){
-        
-        if(i!="#" && find(firstSets[LHS].begin(),firstSets[LHS].end(),i) == firstSets[LHS].end()){
-            firstSets[LHS].push_back(i);
-            *something=true;
-        }
-        
-    }
-    
-    //if the first set of the current index has #
-    
-    int sop=b->RHS[index];
-    if(find(firstSets[sop].begin(),firstSets[sop].end(),"#") != firstSets[sop].end()){
-        
-        applyRules(b, index+1, something);
-    }
+    return set;
     
 }
 
@@ -322,7 +299,12 @@ void printOutFirstSets(){
     std::map< int,vector<string> >::iterator it=firstSets.begin();
     
     
+    
+    
+    
+    
     //building nonterminals string vector
+   
     
     while(it!=firstSets.end()){
         cout<<"First("<<symbol[it->first]<<") = {";
@@ -340,6 +322,66 @@ void printOutFirstSets(){
     
     
 }
+
+
+bool addFirstSetsTo(int to, int from){
+    bool addedSets=false;
+    for(int i=0;i<terminals.size();i++){  //if LHS is not terminal
+        if(terminals[i]!=to){
+            continue;
+        }else {
+            return addedSets;
+        }
+    }
+   for(string i:firstSets[from]){
+       if(from >= countOfSpecialSymbols){
+       if(find(firstSets[to].begin(),firstSets[to].end(),i) == firstSets[to].end()){
+           firstSets[to].push_back(i);
+           addedSets=true;
+       }
+       }
+   }
+    
+    return addedSets;
+    
+}
+ 
+                                                     
+
+
+bool applyRules(){
+    bool changeSomething=false;
+    for(int i=0; i<rules.size(); i++){ //for every rule
+        int LHS=rules[i]->LHS;
+        vector<int> *RHS=&rules[i]->RHS;
+        bool stop=false;
+        
+        for(int j=0; j<RHS->size() && stop==false; j++){
+            if(find(terminals.begin(),terminals.end(),rules[i]->RHS[j]) != terminals.end() /*|| symbol[RHS->at(j)]!="#"*/ || find(firstSets[RHS->at(j)].begin(),firstSets[RHS->at(j)].end(),"#") != firstSets[RHS->at(j)].end()){ //for every rule if rhs index is terminal or has epsilon
+               stop=true;}
+                if(addFirstSetsTo(LHS, RHS->at(j))){
+                    changeSomething=true;
+                }
+            
+            
+        }
+        if(!stop){
+            if(find(firstSets[LHS].begin(),firstSets[LHS].end(),"#") == firstSets[LHS].end() ){
+                changeSomething=true;
+                firstSets[LHS].push_back("#");
+            }
+        }
+      
+      
+        
+        
+        
+    }
+     return changeSomething;
+    
+}
+
+
     
     
     
@@ -360,37 +402,40 @@ void CalculateFirstSets()
     setTerminals();
     
     
-       
+    vector <string> zeroVector;
+    zeroVector.push_back("0");
+    firstSets[0]=zeroVector;
+    countOfSpecialSymbols++;
     //loop thorugh symbols and see which ones are terminals and add them to firstSet of each terminal
     for(int d:terminals){
         //firstSets[d].resize(1);
-        if(symbol[d]==""){
-         firstSets[d].push_back("#");
-        }
-        else{
             firstSets[d].push_back(symbol[d]);
-        }
+        
        
+    }
+    
+    
+    //add epsilon to firstSets
+    for(int qw=0; qw<symbol.size(); qw++){
+        if(symbol[qw]==""){
+            firstSets[qw].push_back("#");
+        }
     }
     
  
     
-    bool c=true;
+    bool c=true; int pass=0;
   
     while(c){
         c=false;
-        for(grammerRule* b:rules){
-            //vector <string> temp=firstSets;
-            applyRules(b,0,&c);
-            
-        }
+        c=applyRules();
+        pass++;
         
-        
-        printOutFirstSets();
+        cout<<"pass:"<<pass<<"\n";  printOutFirstSets(); cout<<"\n";
         
     }
     
-    printOutFirstSets();
+    //printOutFirstSets();
 }
     
     
