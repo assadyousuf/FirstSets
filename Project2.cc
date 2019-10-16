@@ -11,6 +11,8 @@
 #include <vector>
 #include <map>
 #include <set>
+#include <iterator>
+
 using namespace std;
 struct grammerRule{
     int LHS;
@@ -30,7 +32,7 @@ vector <string> symbol; //symbol used to store
 vector <grammerRule*> generatingRules;
 vector <grammerRule*> reachableRules;
  vector <int> usefullSymbols;
- vector <string> firstSets;
+  map<int,vector<string>> firstSets;
 bool change;
 
 
@@ -271,157 +273,71 @@ void setTerminals(){
     
 }
 
-void fRule3(bool *change, bool firstTime,grammerRule* t){
-    
-        if(find(nonterminals.begin(),nonterminals.end(),t->RHS[0]) != nonterminals.end() || (find(terminals.begin(),terminals.end(),t->RHS[0]) != terminals.end()) ) {
-        
-                if(firstSets[t->LHS].find(firstSets[t->RHS[0]]) == string::npos && firstSets[t->RHS[0]]!="#" ){
-                    size_t pos=firstSets[t->RHS[0]].find("#");
-                    if(pos!=string::npos){
-                        string z=firstSets[t->RHS[0]];
-                        z.erase(pos);
-                        firstSets[t->LHS].append(z);
-                        *change=true;
-                        
-                    }
-                    if(firstTime==true){
-                        firstSets[t->LHS]="";
-                    }
-                    string str=firstSets[t->RHS[0]];
-                    if(isdigit(str[0])){
-                        firstSets[t->RHS[0]].clear();          }
-                    
-                    firstSets[t->LHS].append(firstSets[t->RHS[0]]);
-                    *change=true;
-                    
-                }
-            
-        }
-    
-    
-}
 
-void fRule4(bool *change, bool firstTime,grammerRule* t){
-    bool noE=false;
-    int w=0;
-     
-         noE=false;
-         w=0;
-         for(int l=0;l<t->RHS.size();l++){
-
-             if( firstSets[t->RHS[l]].find("#") != string::npos ){
-                 w++;
-                 continue;
-             }
-             
-            
-             
-         }
-       
-         
-         if(w<t->RHS.size() && firstSets[t->RHS[w]].find("#") == string::npos){
-             if(firstSets[t->RHS[w]].find(firstSets[t->RHS[w]]) == string::npos){
-                  size_t pos=firstSets[t->RHS[w]].find("#");
-                  string z=firstSets[t->RHS[w]];
-                 if(pos!=string::npos){
-                     z.erase(pos);
-                     
-                     
-                 }
-                 
-                 if(firstTime==true){
-                     firstSets[t->LHS].clear();
-                 }
-                 
-                 if(isdigit(z[0])){
-                     firstSets[t->RHS[w]].clear();
-                 }
-                 
-                 firstSets[t->LHS].append(z);
-                 *change=true;
-              //firstSets[t->LHS].append(firstSets[t->RHS[w]]);
-             }
-         }
-        
-         
-         
-         
-         
-
-}
-
-void fRule5(bool *change, bool firstTime,grammerRule* t){
-         bool noE=false;
-             int w=0;
-             
-                  noE=false;
-                  w=0;
-                  for(int l=0;l<t->RHS.size();l++){
-
-                      if( firstSets[t->RHS[l]].find("#") != string::npos ){
-                          w++;
-                          continue;
-                      } else {
-                          break;
-                      }
-                      
-                  }
-                 
-                  
-    if(w==1){
-        firstSets[t->LHS]="#";
-    }
-                  
-    
-                  else if(w==t->RHS.size()-1 && firstSets[t->RHS[w]].find("#") != string::npos){
-                      if(firstTime==true){
-                          firstSets[t->LHS]="";
-                      }
-                      
-                      if(isdigit(firstSets[t->LHS][0])){
-                          firstSets[t->LHS].clear();
-                      }
-                      
-                      firstSets[t->LHS].append("#");
-                      *change=true;
-                      
-                  }
-                 
-                  
-                  
-                  
-          
-               
-      
-}
 
 void applyRules(grammerRule* b, int index,bool* something){
+ 
+   
     int z=b->RHS[index];
-    int lhs=b->LHS;
-    if(/*b->RHS[index]==b->RHS.back()*/ index==b->RHS.size() && (firstSets[lhs].find("#") == string::npos)){ //base case if last element is Epsilon and epsilon does not exist in first(LHS)
-        firstSets[b->LHS].append("#");
-        *something=true;
+    int LHS=b->LHS;
+    
+    if(z>b->RHS.size()){
+        firstSets[LHS].push_back("#");
+        return;
     }
-      
-    else if(/*b->RHS[index]!=b->RHS.back()*/ index!=b->RHS.size()){ //if symbol is not the last element
-        int y=b->RHS[index];
-        string tem=firstSets[y]; //tem=firstSet of that symbol we are processing
-        
-            string LHSet= firstSets[b->LHS];
-            string RHSet=firstSets[b->RHS[index]];
-            if(LHSet.find(RHSet) == string::npos || LHSet==""){
-            firstSets[b->LHS].append(firstSets[b->RHS[index]]);
-                *something=true;
+    else if(index>=b->RHS.size() && find(firstSets[LHS].begin(),firstSets[LHS].end(), "#") == firstSets[LHS].end() ){ //when inndex is end and # aka -1 is not inside vector
+        if(find(firstSets[b->RHS[z-1]].begin(),firstSets[b->RHS[z-1]].end(), "#") != firstSets[b->RHS[z-1]].end()){
+        firstSets[LHS].push_back("#");
+            *something=true;
             return;
-            }
-        
-        if(tem.find("#")!=string::npos){ //if firstset of symbol that we are processing has epsilon
-            applyRules(b, index+1, something);
         }
         
         
+    }else if(index>=b->RHS.size()){
+        return;
     }
-             
+    
+      //add first of symbol to LHS
+      //copy contents of RHS vector to LHS vector
+    for(string i:firstSets[z]){
+        
+        if(i!="#" && find(firstSets[LHS].begin(),firstSets[LHS].end(),i) == firstSets[LHS].end()){
+            firstSets[LHS].push_back(i);
+            *something=true;
+        }
+        
+    }
+    
+    //if the first set of the current index has #
+    
+    int sop=b->RHS[index];
+    if(find(firstSets[sop].begin(),firstSets[sop].end(),"#") != firstSets[sop].end()){
+        
+        applyRules(b, index+1, something);
+    }
+    
+}
+
+void printOutFirstSets(){
+    std::map< int,vector<string> >::iterator it=firstSets.begin();
+    
+    
+    //building nonterminals string vector
+    
+    while(it!=firstSets.end()){
+        cout<<"First("<<symbol[it->first]<<") = {";
+        for(int str=0;str<it->second.size();str++){
+            if(str+1<it->second.size()){
+            cout<<it->second[str]<<", ";
+            }else {
+                cout<<it->second[str] << "}";
+            }
+            
+        }
+        it++;
+        cout<<"\n";
+    }
+    
     
 }
     
@@ -442,19 +358,19 @@ void CalculateFirstSets()
 {
 
     setTerminals();
-    firstSets.resize(symbol.size());
+    
     
        
     //loop thorugh symbols and see which ones are terminals and add them to firstSet of each terminal
-    for(int u=0; u<terminals.size(); u++){
-        for(int v=0; v<symbol.size(); v++){
-            if(v==terminals[u]){
-                if(symbol[terminals[u]]==""){
-                    firstSets.insert(firstSets.begin()+v,"#");
-                } else {
-                    firstSets.insert(firstSets.begin()+v,symbol[terminals[u]]);} //insert the symbol of the index given inside of terminal to first set of that index
-            }
+    for(int d:terminals){
+        //firstSets[d].resize(1);
+        if(symbol[d]==""){
+         firstSets[d].push_back("#");
         }
+        else{
+            firstSets[d].push_back(symbol[d]);
+        }
+       
     }
     
  
@@ -469,41 +385,19 @@ void CalculateFirstSets()
             
         }
         
-    }
-    
-    for(int h=0;h<firstSets.size();h++){
-        string s=firstSets[h];
-        auto plz=std::unique(s.begin(), s.end());
-        firstSets[h]=plz-s.begin();
+        
+        printOutFirstSets();
         
     }
+    
+    printOutFirstSets();
+}
     
     
     
    
     
-    sort(nonterminals.begin(), nonterminals.end());
-    for(int z=0; z<firstSets.size(); z++){
-        sort(firstSets[z].begin(),firstSets[z].end(), greater<>());
-    }
     
-    for(int m=0; m<nonterminals.size();m++){
-        cout<<"FIRST("<<symbol[nonterminals[m]] << ") = { ";
-        for(int n=0; n<firstSets[nonterminals[m]].size(); n++){
-            if(n==0 && firstSets[nonterminals[m]].size()==1){
-                //sort(firstSets[nonterminals[m]].begin(),firstSets[nonterminals[m]].end());
-                cout << firstSets[nonterminals[m]][n];
-            }
-            else if(n+1>=firstSets[nonterminals[m]].size()){
-                    cout << firstSets[nonterminals[m]][n];
-            }else {
-            cout << firstSets[nonterminals[m]][n]<< ", ";}
-                
-                
-        }
-        cout << " }\n";
-                                 }
-}
 
 
 // Task 4
