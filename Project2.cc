@@ -1,46 +1,4 @@
-/*
- * Copyright (C) Mohsen Zohrevandi, 2017
- *               Rida Bazzi 2019
- * Do not share this file with anyone
- */
-#include <iostream>
-#include <cstdio>
-#include <cstdlib>
-#include "lexer.h"
-#include <algorithm>
-#include <vector>
-#include <map>
-#include <set>
-#include <iterator>
-
-using namespace std;
-struct grammerRule{
-    int LHS;
-    vector <int> RHS;
-    bool isGen=false;
-    bool isReachable=false;
-    bool isTerminal=false;
-    bool isFirstEpsilon=false;
-};
-
-
-using namespace std;
-
-vector <grammerRule*> rules;
-vector <string> symbol; //symbol used to store
- LexicalAnalyzer lexer;
- vector <int> nonterminals;
- vector <int> terminals;
- vector <bool> generating;
- vector <bool> reachable;
-vector <grammerRule*> generatingRules;
-vector <grammerRule*> reachableRules;
- vector <int> usefullSymbols;
-  map<int,vector<string>> firstSets;
-  bool change;
-int countOfSpecialSymbols=0;
-
-
+#include "project2.h"
 
 bool checkIfInVector(vector <string> *vect, Token *t){
     vector<string>::iterator it=find(vect->begin(),vect->end(),t->lexeme);
@@ -295,96 +253,8 @@ vector <string> containEpsilon(vector <string> set){
     
 }
 
-void printOutFirstSets(){
-    std::map< int,vector<string> >::iterator it=firstSets.begin();
-    
-    
-    
-    
-    
-    
-    //building nonterminals string vector
-   
-    
-    while(it!=firstSets.end()){
-        cout<<"First("<<symbol[it->first]<<") = {";
-        for(int str=0;str<it->second.size();str++){
-            if(str+1<it->second.size()){
-            cout<<it->second[str]<<", ";
-            }else {
-                cout<<it->second[str] << "}";
-            }
-            
-        }
-        it++;
-        cout<<"\n";
-    }
-    
-    
-}
 
 
-bool addFirstSetsTo(int to, int from){
-    bool addedSets=false;
-    for(int i=0;i<terminals.size();i++){  //if LHS is not terminal
-        if(terminals[i]!=to){
-            continue;
-        }else {
-            return addedSets;
-        }
-    }
-   for(string i:firstSets[from]){
-       if(from >= countOfSpecialSymbols){
-       if(find(firstSets[to].begin(),firstSets[to].end(),i) == firstSets[to].end()){
-           firstSets[to].push_back(i);
-           addedSets=true;
-       }
-       }
-   }
-    
-    return addedSets;
-    
-}
- 
-                                                     
-
-
-bool applyRules(){
-    bool changeSomething=false;
-    for(int i=0; i<rules.size(); i++){ //for every rule
-        int LHS=rules[i]->LHS;
-        vector<int> *RHS=&rules[i]->RHS;
-        bool stop=false;
-        
-        for(int j=0; j<RHS->size() && stop==false; j++){
-            if(find(terminals.begin(),terminals.end(),rules[i]->RHS[j]) != terminals.end() /*|| symbol[RHS->at(j)]!="#"*/ || find(firstSets[RHS->at(j)].begin(),firstSets[RHS->at(j)].end(),"#") != firstSets[RHS->at(j)].end()){ //for every rule if rhs index is terminal or has epsilon
-               stop=true;}
-                if(addFirstSetsTo(LHS, RHS->at(j))){
-                    changeSomething=true;
-                }
-            
-            
-        }
-        if(!stop){
-            if(find(firstSets[LHS].begin(),firstSets[LHS].end(),"#") == firstSets[LHS].end() ){
-                changeSomething=true;
-                firstSets[LHS].push_back("#");
-            }
-        }
-      
-      
-        
-        
-        
-    }
-     return changeSomething;
-    
-}
-
-
-    
-    
-    
   
 
 // Task 2
@@ -400,40 +270,13 @@ void CalculateFirstSets()
 {
 
     setTerminals();
+    applyFirstSetRuleOne();
+    applyFirstSetRuleTwo();
+    applyFirstSetRule345();
     
     
-    vector <string> zeroVector;
-    zeroVector.push_back("0");
-    firstSets[0]=zeroVector;
-    countOfSpecialSymbols++;
-    //loop thorugh symbols and see which ones are terminals and add them to firstSet of each terminal
-    for(int d:terminals){
-        //firstSets[d].resize(1);
-            firstSets[d].push_back(symbol[d]);
-        
-       
-    }
     
-    
-    //add epsilon to firstSets
-    for(int qw=0; qw<symbol.size(); qw++){
-        if(symbol[qw]==""){
-            firstSets[qw].push_back("#");
-        }
-    }
-    
- 
-    
-    bool c=true; int pass=0;
-  
-    while(c){
-        c=false;
-        c=applyRules();
-        pass++;
-        
-        cout<<"pass:"<<pass<<"\n";  printOutFirstSets(); cout<<"\n";
-        
-    }
+   
     
     //printOutFirstSets();
 }
@@ -508,5 +351,107 @@ int main (int argc, char* argv[])
     }
     
     return 0;
+}
+
+bool boolIsOneSetInAnother(int f, int t){
+    for(int i=0;i<firstSets[f].size();i++){
+    for(int j=0; j<firstSets[t].size();j++ ){
+        if(firstSets[f][i]==firstSets[t][j]){
+            return true;
+        }
+    }
+    
+}
+    return false;
+    
+}
+
+
+void addFirstSets(int f,int t){
+    vector <int> frome=firstSets[f];
+    vector <int> to=firstSets[t];
+    //sort(frome.begin(), frome.end());
+    //sort(to.begin(), to.end());
+  
+    for(int outter=0;outter<f;outter++){
+        for(int inner=0;inner<t;inner++){
+            if(!boolIsOneSetInAnother(firstSets[f][inner], firstSets[t][outter])){
+                firstSets[f]
+            }
+        }
+        
+  
+    if(firstSets[t].empty()){
+        for(int p=0; p<firstSets[f].size();p++){
+            firstSets[t].push_back(firstSets[f].at(p));
+            change=true;
+        
+    }
+        //a.insert(a.end(), b.begin(), b.end()); add vector b to the end of vector A
+    
+    
+}
+void applyFirstSetRuleOne(){
+    vector <int> vector;
+    for(int i=0;i<symbol.size();i++){
+        if(symbol.at(i) == "#"){
+            vector.push_back(i);
+            firstSets[i]=vector;
+        }
+    }
+}
+
+void applyFirstSetRuleTwo(){
+    for(int i=0;i<terminals.size();i++){
+           vector <int> vector;
+           vector.push_back(terminals[i]);
+           firstSets[terminals[i]]=vector;
+           }
+}
+
+
+void applyFirstSetRule345(){
+    change=true;
+    
+    while(change){
+        change=false;
+        for(int i=0;i<rules.size();i++){
+            for(int j=0; j<rules[i]->RHS.size(); j++){
+                //std::vector<int>::iterator traverser=rules[i]->RHS.begin();
+                //1)
+                if(isNonterminal(rules[i]->RHS[j]) || isTerminal(rules[i]->RHS[j])){
+                    addFirstSets(rules[i]->RHS[j],rules[i]->LHS);
+                }
+                
+                if( checkIfSymbolCanBeEpsilon(rules[i]->RHS[j]) ){
+                    for(int z=j; z<rules[i]->RHS.size(); z++){
+                        if(rules[i]->RHS[z]==0){
+                            //apply rule 3
+                            if(isNonterminal(rules[i]->RHS[j]) || isTerminal(rules[i]->RHS[j])){
+                                addFirstSets(rules[i]->RHS[j],rules[i]->LHS);
+                            }
+                            else
+                                firstSets[rules[i]->LHS].push_back(0);
+                            
+                        }else {
+                            break;
+                        }
+                    }
+                }else {
+                    break;
+                }
+                    
+                    
+                }
+            
+                
+                
+                
+                
+                
+           
+        }
+        
+    }
 }
 
