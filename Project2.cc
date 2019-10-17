@@ -337,6 +337,8 @@ int main (int argc, char* argv[])
             break;
 
         case 3: CalculateFirstSets();
+                printOutFirstSets();
+                
             break;
 
         case 4: CalculateFollowSets();
@@ -353,17 +355,13 @@ int main (int argc, char* argv[])
     return 0;
 }
 
-bool boolIsOneSetInAnother(int f, int t){
-    for(int i=0;i<firstSets[f].size();i++){
-    for(int j=0; j<firstSets[t].size();j++ ){
-        if(firstSets[f][i]==firstSets[t][j]){
+bool ifDoesNotExis(vector<int> setfrom, int q){
+    for(int y=0;y<setfrom.size();y++){
+        if(setfrom[y]==q){
             return true;
         }
     }
-    
-}
     return false;
-    
 }
 
 
@@ -373,24 +371,25 @@ void addFirstSets(int f,int t){
     //sort(frome.begin(), frome.end());
     //sort(to.begin(), to.end());
   
-    for(int outter=0;outter<f;outter++){
-        for(int inner=0;inner<t;inner++){
-            if(!boolIsOneSetInAnother(firstSets[f][inner], firstSets[t][outter])){
-                firstSets[f]
-            }
+    for(int var=0;var<firstSets[f].size();var++){
+        if(!ifDoesNotExis(firstSets[t], firstSets[f][var])){
+            firstSets[t].push_back(firstSets[f][var]);
+            change=true;
         }
-        
+    }
   
     if(firstSets[t].empty()){
         for(int p=0; p<firstSets[f].size();p++){
             firstSets[t].push_back(firstSets[f].at(p));
             change=true;
-        
+        }
     }
         //a.insert(a.end(), b.begin(), b.end()); add vector b to the end of vector A
     
     
 }
+    
+    
 void applyFirstSetRuleOne(){
     vector <int> vector;
     for(int i=0;i<symbol.size();i++){
@@ -425,13 +424,14 @@ void applyFirstSetRule345(){
                 
                 if( checkIfSymbolCanBeEpsilon(rules[i]->RHS[j]) ){
                     for(int z=j; z<rules[i]->RHS.size(); z++){
-                        if(rules[i]->RHS[z]==0){
+                        if(checkIFSymbolIsIFirstSet(firstSets[rules[i]->RHS[z]],0)){
                             //apply rule 3
-                            if(isNonterminal(rules[i]->RHS[j]) || isTerminal(rules[i]->RHS[j])){
-                                addFirstSets(rules[i]->RHS[j],rules[i]->LHS);
+                            if(isNonterminal(rules[i]->RHS[z]) || isTerminal(rules[i]->RHS[z])){
+                                addFirstSets(rules[i]->RHS[z],rules[i]->LHS);
                             }
                             else
-                                firstSets[rules[i]->LHS].push_back(0);
+                                addFirstSets(0,rules[i]->LHS);
+                                   
                             
                         }else {
                             break;
