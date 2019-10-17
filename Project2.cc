@@ -1,4 +1,5 @@
 #include "project2.h"
+#include <set>
 
 bool checkIfInVector(vector <string> *vect, Token *t){
     vector<string>::iterator it=find(vect->begin(),vect->end(),t->lexeme);
@@ -90,8 +91,8 @@ void generatingSet(){
     change=true;
     
     generating.resize(symbol.size());
-    for(int s=0; s<terminals.size(); s++){
-        generating[terminals[s]]=true;
+    for(int s:terminals){
+        generating[s]=true;
     }
     
     falseq.resize(generating.size());
@@ -173,7 +174,7 @@ void ReadGrammar()
         
         rule->LHS=findIndexInVector(&symbol, &t);
         if(find(nonterminals.begin(), nonterminals.end(), rule->LHS) == nonterminals.end()){
-        nonterminals.push_back(rule->LHS);
+        nonterminals.insert(rule->LHS);
         }
         
         t=lexer.GetToken();
@@ -214,20 +215,12 @@ void ReadGrammar()
 // Task 1
 void printTerminalsAndNoneTerminals()
 {
-    sort(nonterminals.begin(), nonterminals.end()); //sorts nonterminals vector
-    //printing nonterimnals
-    for(int i=0; i<nonterminals.size(); i++){
-        int index=nonterminals.at(i);
-        cout<<symbol[index]<<" ";
-    }
-    
-   //printing terminals anything thats not a nonterminal is a terminal
-    for(int j=0; j<symbol.size(); j++){
-        if(find(nonterminals.begin(),nonterminals.end(),j) == nonterminals.end() && symbol[j]!="END_OF_FILE"){
-            cout << symbol[j] << " ";
-            terminals.push_back(j);
+    for(int u=1;u<symbol.size();u++){
+                cout<<symbol[u]<<" ";
+            
         }
-    }
+    
+    
    
 }
 
@@ -236,7 +229,7 @@ void setTerminals(){
     for(int j=0; j<symbol.size(); j++){
            if(find(nonterminals.begin(),nonterminals.end(),j) == nonterminals.end() &&  symbol[j]!="#"){
                //cout << symbol[j] << " ";
-            terminals.push_back(j);
+            terminals.insert(j);
            }
     }
     
@@ -273,6 +266,7 @@ void CalculateFirstSets()
     applyFirstSetRuleOne();
     applyFirstSetRuleTwo();
     applyFirstSetRule345();
+    printFirstSets();
     
     
     
@@ -291,6 +285,10 @@ void CalculateFirstSets()
 // Task 4
 void CalculateFollowSets()
 {
+    applyFirstSetRuleOne();
+    applyFirstSetRuleTwo();
+    applyFirstSetRule345();
+    printFirstSets();
    // cout << "4\n";
 }
 
@@ -330,14 +328,16 @@ int main (int argc, char* argv[])
     
     
     switch (task) {
-        case 1: printTerminalsAndNoneTerminals();
+        case 1:
+            setTerminals();
+            printTerminalsAndNoneTerminals();
             break;
 
         case 2: RemoveUselessSymbols();
             break;
 
         case 3: CalculateFirstSets();
-                printOutFirstSets();
+                //printOutFirstSets();
                 
             break;
 
@@ -365,93 +365,91 @@ bool ifDoesNotExis(vector<int> setfrom, int q){
 }
 
 
-void addFirstSets(int f,int t){
-    vector <int> frome=firstSets[f];
-    vector <int> to=firstSets[t];
-    //sort(frome.begin(), frome.end());
-    //sort(to.begin(), to.end());
-  
-    for(int var=0;var<firstSets[f].size();var++){
-        if(!ifDoesNotExis(firstSets[t], firstSets[f][var])){
-            firstSets[t].push_back(firstSets[f][var]);
-            change=true;
-        }
-    }
-  
-    if(firstSets[t].empty()){
-        for(int p=0; p<firstSets[f].size();p++){
-            firstSets[t].push_back(firstSets[f].at(p));
-            change=true;
-        }
-    }
-        //a.insert(a.end(), b.begin(), b.end()); add vector b to the end of vector A
-    
-    
-}
     
     
 void applyFirstSetRuleOne(){
-    vector <int> vector;
-    for(int i=0;i<symbol.size();i++){
-        if(symbol.at(i) == "#"){
-            vector.push_back(i);
-            firstSets[i]=vector;
-        }
+    if(symbol[0]=="#"){
+        //Vector[0].insert("#");
+        Vector.resize(symbol.size());
+        Vector[0].insert(0);
     }
+    
 }
 
 void applyFirstSetRuleTwo(){
-    for(int i=0;i<terminals.size();i++){
-           vector <int> vector;
-           vector.push_back(terminals[i]);
-           firstSets[terminals[i]]=vector;
-           }
+    for(int t:terminals){
+        Vector[t].insert(t);
+    }
 }
 
 
 void applyFirstSetRule345(){
     change=true;
-    
+    int counter=1;
     while(change){
         change=false;
+        cout<<counter<<"\n";
         for(int i=0;i<rules.size();i++){
+            //cout<<counter<<"\n";
             for(int j=0; j<rules[i]->RHS.size(); j++){
                 //std::vector<int>::iterator traverser=rules[i]->RHS.begin();
                 //1)
-                if(isNonterminal(rules[i]->RHS[j]) || isTerminal(rules[i]->RHS[j])){
-                    addFirstSets(rules[i]->RHS[j],rules[i]->LHS);
+                if(nonterminals.find(rules[i]->RHS[j]) != nonterminals.end() || terminals.find(rules[i]->RHS[j]) != terminals.end() ){
+                    set <int> cpyset=Vector[rules[i]->RHS[j]];
+                    set <int> lhsBeforeApplication= Vector[rules[i]->LHS];
+                    if(cpyset.find(0)!=cpyset.end()){
+                        cpyset.erase(cpyset.find(0));
+                    }
+                    
+                    Vector[rules[i]->LHS].insert(cpyset.begin(),cpyset.end());
+                    if(lhsBeforeApplication!= Vector[rules[i]->LHS]){
+                        change=true;
+                    }
                 }
                 
-                if( checkIfSymbolCanBeEpsilon(rules[i]->RHS[j]) ){
-                    for(int z=j; z<rules[i]->RHS.size(); z++){
-                        if(checkIFSymbolIsIFirstSet(firstSets[rules[i]->RHS[z]],0)){
-                            //apply rule 3
-                            if(isNonterminal(rules[i]->RHS[z]) || isTerminal(rules[i]->RHS[z])){
-                                addFirstSets(rules[i]->RHS[z],rules[i]->LHS);
-                            }
-                            else
-                                addFirstSets(0,rules[i]->LHS);
-                                   
-                            
-                        }else {
-                            break;
+                vector<int>::iterator itRHS=rules[i]->RHS.begin()++;
+                if(Vector[*itRHS].find(0) != Vector[*itRHS].end() ){
+                while( *itRHS != rules[i]->RHS.back() &&Vector[*itRHS].find(0) != Vector[*itRHS].end()  ){
+                    if(nonterminals.find(*itRHS) != nonterminals.end() || terminals.find(*itRHS) != terminals.end() ){
+                        set <int> cpyset=Vector[*itRHS];
+                        set <int> lhsBeforeApplication=Vector[*itRHS];
+                        if(cpyset.find(0)!=cpyset.end()){
+                            cpyset.erase(cpyset.find(0));
                         }
+                        Vector[rules[i]->LHS].insert(cpyset.begin(),cpyset.end());
+                        if(lhsBeforeApplication!= Vector[*itRHS]){
+                            change=true;
+                        }
+                        
+                        
+                        
+                    itRHS++;
+                }
+                }
+                
+                if(Vector[*itRHS].find(0) != Vector[*itRHS].end() ){
+                     set <int> lhsBeforeApplication= Vector[rules[i]->LHS];
+                    Vector[rules[i]->LHS].insert( * (Vector[*itRHS].find(0)) );
+                    if(lhsBeforeApplication!= Vector[rules[i]->LHS]){
+                        change=true;
                     }
-                }else {
+                }
+                    
+                
+                }
+                
+                
+                else {
                     break;
                 }
-                    
-                    
-                }
+            }
             
-                
-                
-                
-                
-                
-           
         }
-        
+        printFirstSets();
+        cout<<"\n";
+        counter++;
     }
 }
+
+
 
